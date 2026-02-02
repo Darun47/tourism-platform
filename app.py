@@ -102,7 +102,7 @@ def main():
     
     # Footer
     st.sidebar.markdown("---")
-    st.sidebar.caption("Made with ❤️ for AI Capstone")
+    
 
 # ============================================================================
 # HOME PAGE
