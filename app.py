@@ -24,9 +24,7 @@ import sys
 import os
 
 # Add backend modules to path
-sys.path.append("/content/drive/MyDrive/CapstoneDataset")
-
-
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import backend modules
 from tourism_backend_engine import TourismBackendEngine, TouristProfile
@@ -237,17 +235,34 @@ def show_home_page(engine):
     st.divider()
     
     # Popular destinations
-    st.markdown("### 🔥 Most Popular Destinations")
+    st.markdown("### 🔥 Our Featured Destinations")
+    
+    st.info("""
+    **🌍 Available Cities:** Paris, Rome, Beijing, Agra, Cusco
+    
+    Each destination offers unique cultural experiences, from UNESCO World Heritage Sites 
+    to world-class museums and historical landmarks!
+    """)
     
     top_cities = list(analytics['popular_destinations']['top_cities'].items())[:5]
     
     cols = st.columns(5)
+    city_icons = {
+        'Paris': '🗼',
+        'Rome': '🏛️',
+        'Beijing': '🏯',
+        'Agra': '🕌',
+        'Cusco': '⛰️'
+    }
+    
     for i, (city, count) in enumerate(top_cities):
         with cols[i]:
+            icon = city_icons.get(city, '🌍')
             st.markdown(f"""
-            <div class="recommendation-card">
+            <div class="recommendation-card" style="text-align: center;">
+                <h1>{icon}</h1>
                 <h4>{city}</h4>
-                <p style="color: #7F8C8D;">{count} visits</p>
+                <p style="color: #7F8C8D;">{count} experiences</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -508,59 +523,74 @@ def show_recommendations_page(engine):
     
     st.write("")
     
-    # Filters
-    col1, col2, col3 = st.columns(3)
+    # Filters in tabs for better organization
+    tab1, tab2 = st.tabs(["🔍 Search Options", "ℹ️ Tips"])
     
-    with col1:
-        rec_type = st.selectbox(
-            "What are you looking for?",
-            ['All Recommendations', 'Cities Only', 'Specific Sites'],
-            index=0
-        )
+    with tab1:
+        col1, col2, col3 = st.columns(3)
         
-        type_mapping = {
-            'All Recommendations': 'all',
-            'Cities Only': 'cities',
-            'Specific Sites': 'sites'
-        }
-        rec_type_param = type_mapping[rec_type]
+        with col1:
+            rec_type = st.selectbox(
+                "What are you looking for?",
+                ['All Recommendations', 'Cities Only', 'Specific Sites'],
+                index=0
+            )
+            
+            type_mapping = {
+                'All Recommendations': 'all',
+                'Cities Only': 'cities',
+                'Specific Sites': 'sites'
+            }
+            rec_type_param = type_mapping[rec_type]
+        
+        with col2:
+            num_recs = st.slider("Number of recommendations", 3, 15, 5)
+        
+        with col3:
+            budget_filter = st.selectbox(
+                "Budget Level",
+                ['Mid-range', 'Luxury'],  # Only show available options
+                index=0
+            )
+        
+        col4, col5 = st.columns(2)
+        
+        with col4:
+            interests_filter = st.multiselect(
+                "Your Interests",
+                ['Art', 'History', 'Architecture', 'Cultural', 'Nature'],
+                default=['Art', 'History']
+            )
+        
+        with col5:
+            age_filter = st.number_input("Your Age", 18, 80, 30)
     
-    with col2:
-        num_recs = st.slider("Number of recommendations", 3, 15, 10)
-    
-    with col3:
-        budget_filter = st.selectbox(
-            "Budget Level",
-            ['Any', 'Budget', 'Mid-range', 'Luxury']
-        )
-    
-    col4, col5 = st.columns(2)
-    
-    with col4:
-        interests_filter = st.multiselect(
-            "Your Interests",
-            ['Art', 'History', 'Architecture', 'Cultural', 'Nature'],
-            default=['Art']
-        )
-    
-    with col5:
-        age_filter = st.number_input("Your Age", 18, 80, 30)
+    with tab2:
+        st.info("""
+        **💡 Tips for Best Results:**
+        
+        - Select multiple interests to get varied recommendations
+        - Our dataset focuses on 5 major cultural destinations
+        - Budget levels available: Mid-range and Luxury
+        - Higher match scores (80+) indicate excellent fits
+        - UNESCO sites are specially highlighted
+        """)
     
     st.write("")
     
     if st.button("🔍 Get Recommendations", type="primary", use_container_width=True):
         if not interests_filter:
-            st.warning("Please select at least one interest!")
+            st.warning("⚠️ Please select at least one interest to get recommendations!")
             return
         
-        with st.spinner("Finding perfect matches..."):
+        with st.spinner("🤖 AI is finding your perfect matches..."):
             try:
                 profile = TouristProfile(
                     age=age_filter,
                     interests=interests_filter,
                     accessibility_needs=False,
                     preferred_duration=7,
-                    budget_preference='Mid-range' if budget_filter == 'Any' else budget_filter
+                    budget_preference=budget_filter
                 )
                 
                 recommendations = engine.get_recommendations(
@@ -569,10 +599,16 @@ def show_recommendations_page(engine):
                     recommendation_type=rec_type_param
                 )
                 
-                display_recommendations(recommendations)
+                if recommendations['status'] == 'success':
+                    # Show summary
+                    st.success(f"✅ Found {recommendations['count']} recommendations matching your preferences!")
+                    display_recommendations(recommendations)
+                else:
+                    st.error("Failed to generate recommendations. Please try again.")
                 
             except Exception as e:
-                st.error(f"Error getting recommendations: {str(e)}")
+                st.error(f"❌ Error: {str(e)}")
+                st.info("Try selecting different filters or reducing the number of recommendations.")
 
 def display_recommendations(recommendations):
     """Display recommendation results"""
@@ -585,26 +621,45 @@ def display_recommendations(recommendations):
     st.divider()
     st.markdown(f"### 🎯 Top {recommendations['count']} Recommendations for You")
     
+    if len(recommendations['recommendations']) == 0:
+        st.warning("No recommendations found. Try adjusting your filters!")
+        return
+    
     for i, rec in enumerate(recommendations['recommendations'], 1):
-        st.markdown(f"""
-        <div class="recommendation-card">
-            <h4>#{i} {rec['name']}</h4>
-            <p><strong>Type:</strong> {rec['type'].title()}</p>
-            <p><strong>Match Score:</strong> {rec['score']}/100</p>
-            <p><strong>Why recommended:</strong> {rec.get('reason', 'Great match for you')}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        if 'city' in rec and rec.get('type') == 'site':
-            st.caption(f"📍 Location: {rec['city']}, {rec.get('country', '')}")
-        
-        if 'cost_usd' in rec:
-            st.caption(f"💰 Estimated cost: ${rec['cost_usd']:.2f}/day")
-        
-        if 'unesco_site' in rec and rec['unesco_site']:
-            st.caption("🏛️ UNESCO World Heritage Site")
-        
-        st.write("")
+        # Create a nice card with container
+        with st.container():
+            col1, col2 = st.columns([3, 1])
+            
+            with col1:
+                st.markdown(f"### #{i}. {rec['name']}")
+                st.write(f"**Type:** {rec['type'].title()}")
+                st.write(f"**Why recommended:** {rec.get('reason', 'Great match for your interests')}")
+                
+                # Show location for sites
+                if 'city' in rec and rec.get('type') == 'site':
+                    st.write(f"📍 **Location:** {rec['city']}, {rec.get('country', 'N/A')}")
+                
+                # Show UNESCO status
+                if 'unesco_site' in rec and rec['unesco_site']:
+                    st.success("🏛️ UNESCO World Heritage Site")
+            
+            with col2:
+                # Score badge
+                score = rec.get('score', 0)
+                if score >= 80:
+                    st.success(f"**{score}/100**\n\nExcellent Match!")
+                elif score >= 60:
+                    st.info(f"**{score}/100**\n\nGood Match")
+                else:
+                    st.warning(f"**{score}/100**\n\nFair Match")
+                
+                # Cost if available
+                if 'cost_usd' in rec:
+                    st.metric("Daily Cost", f"${rec['cost_usd']:.0f}")
+                elif 'avg_cost_usd' in rec:
+                    st.metric("Daily Cost", f"${rec['avg_cost_usd']:.0f}")
+            
+            st.divider()
 
 # ============================================================================
 # CHATBOT PAGE
