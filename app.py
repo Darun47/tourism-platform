@@ -73,7 +73,7 @@ def main():
         if st.session_state.backend_engine is None:
             with st.spinner("Loading AI backend..."):
                 st.session_state.backend_engine = load_backend_engine(
-                    '/content/drive/MyDrive/Capstone Dataset/master_tourism_dataset_v2_enhanced.csv'
+                    'master_tourism_dataset_v2_enhanced.csv'
                 )
                 st.session_state.chatbot = load_chatbot(st.session_state.backend_engine)
             st.sidebar.success("✅ Backend loaded!")
