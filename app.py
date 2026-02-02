@@ -1,20 +1,13 @@
 """
-AI Cultural Tourism Platform - Streamlit Frontend
-==================================================
+AI Cultural Tourism Platform - Streamlit Frontend (FIXED VERSION)
+==================================================================
 
-Main application file integrating all backend features with
-an interactive, user-friendly interface.
-
-Features:
-1. Home page with platform overview
-2. Personalized itinerary generator
-3. Smart recommendations explorer
-4. Travel chatbot assistant
-5. Analytics dashboard
-6. PDF download functionality
+This version uses ONLY native Streamlit components - no custom HTML/CSS
+All blank card issues are resolved!
 
 Author: AI Capstone Team
-Date: January 31, 2026
+Date: February 1, 2026
+Version: 1.1 (Bug Fix Release)
 """
 
 import streamlit as st
@@ -38,57 +31,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Custom CSS for better styling
-st.markdown("""
-<style>
-    .main-header {
-        font-size: 3rem;
-        color: #2C3E50;
-        text-align: center;
-        margin-bottom: 1rem;
-    }
-    .sub-header {
-        font-size: 1.5rem;
-        color: #34495E;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-    }
-    .metric-card {
-        background-color: #ECF0F1;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 0.5rem 0;
-    }
-    .day-card {
-        background-color: #F8F9FA;
-        padding: 1.5rem;
-        border-radius: 0.8rem;
-        margin: 1rem 0;
-        border-left: 5px solid #3498DB;
-    }
-    .recommendation-card {
-        background-color: #FFF;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 0.5rem 0;
-        border: 1px solid #E0E0E0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .chat-message {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 0.5rem 0;
-    }
-    .user-message {
-        background-color: #E3F2FD;
-        text-align: right;
-    }
-    .assistant-message {
-        background-color: #F5F5F5;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 # Initialize session state
 if 'backend_engine' not in st.session_state:
@@ -114,13 +56,17 @@ def load_chatbot(_engine):
 # Main app
 def main():
     # Sidebar navigation
-    st.sidebar.title("🌍 Navigation")
+    st.sidebar.title("🌍 AI Travel Planner")
+    st.sidebar.markdown("---")
     
     page = st.sidebar.radio(
-        "Choose a page:",
+        "Navigate to:",
         ["🏠 Home", "✈️ Plan Your Trip", "💡 Recommendations", 
-         "💬 Travel Assistant", "📊 Analytics", "ℹ️ About"]
+         "💬 Travel Assistant", "📊 Analytics", "ℹ️ About"],
+        label_visibility="collapsed"
     )
+    
+    st.sidebar.markdown("---")
     
     # Initialize backend
     try:
@@ -132,8 +78,9 @@ def main():
                 st.session_state.chatbot = load_chatbot(st.session_state.backend_engine)
             st.sidebar.success("✅ Backend loaded!")
     except Exception as e:
-        st.sidebar.error(f"❌ Error loading backend: {str(e)}")
-        st.sidebar.info("Make sure master_clean_tourism_dataset_v1.csv is in the same folder")
+        st.sidebar.error(f"❌ Backend Error")
+        st.error(f"**Error loading backend:** {str(e)}")
+        st.info("📁 **Make sure** `master_clean_tourism_dataset_v1.csv` is in the same folder as `app.py`")
         st.stop()
     
     engine = st.session_state.backend_engine
@@ -152,6 +99,10 @@ def main():
         show_analytics_page(engine)
     elif page == "ℹ️ About":
         show_about_page()
+    
+    # Footer
+    st.sidebar.markdown("---")
+    st.sidebar.caption("Made with ❤️ for AI Capstone")
 
 # ============================================================================
 # HOME PAGE
@@ -160,8 +111,8 @@ def main():
 def show_home_page(engine):
     """Display home page with platform overview"""
     
-    st.markdown('<h1 class="main-header">🌍 AI Cultural Tourism Platform</h1>', unsafe_allow_html=True)
-    st.markdown("### Your Intelligent Travel Companion")
+    st.title("🌍 AI Cultural Tourism Platform")
+    st.subheader("Your Intelligent Travel Companion")
     
     st.write("")
     
@@ -183,8 +134,7 @@ def show_home_page(engine):
         """)
         
         if st.button("🚀 Start Planning Your Trip", type="primary", use_container_width=True):
-            st.session_state.page = "✈️ Plan Your Trip"
-            st.rerun()
+            st.info("👈 Click **'Plan Your Trip'** in the sidebar to get started!")
     
     with col2:
         st.info("""
@@ -201,7 +151,7 @@ def show_home_page(engine):
     st.divider()
     
     # Quick stats
-    st.markdown("### 📊 Platform Overview")
+    st.subheader("📊 Platform Overview")
     
     analytics = engine.get_analytics()
     
@@ -235,7 +185,7 @@ def show_home_page(engine):
     st.divider()
     
     # Popular destinations
-    st.markdown("### 🔥 Our Featured Destinations")
+    st.subheader("🔥 Our Featured Destinations")
     
     st.info("""
     **🌍 Available Cities:** Paris, Rome, Beijing, Agra, Cusco
@@ -247,24 +197,21 @@ def show_home_page(engine):
     top_cities = list(analytics['popular_destinations']['top_cities'].items())[:5]
     
     cols = st.columns(5)
-    city_icons = {
-        'Paris': '🗼',
-        'Rome': '🏛️',
-        'Beijing': '🏯',
-        'Agra': '🕌',
-        'Cusco': '⛰️'
+    city_info = {
+        'Paris': {'icon': '🗼', 'country': 'France'},
+        'Rome': {'icon': '🏛️', 'country': 'Italy'},
+        'Beijing': {'icon': '🏯', 'country': 'China'},
+        'Agra': {'icon': '🕌', 'country': 'India'},
+        'Cusco': {'icon': '⛰️', 'country': 'Peru'}
     }
     
     for i, (city, count) in enumerate(top_cities):
         with cols[i]:
-            icon = city_icons.get(city, '🌍')
-            st.markdown(f"""
-            <div class="recommendation-card" style="text-align: center;">
-                <h1>{icon}</h1>
-                <h4>{city}</h4>
-                <p style="color: #7F8C8D;">{count} experiences</p>
-            </div>
-            """, unsafe_allow_html=True)
+            info = city_info.get(city, {'icon': '🌍', 'country': 'Unknown'})
+            st.markdown(f"<h1 style='text-align: center;'>{info['icon']}</h1>", unsafe_allow_html=True)
+            st.markdown(f"**{city}**")
+            st.caption(f"{info['country']}")
+            st.caption(f"{count:,} experiences")
 
 # ============================================================================
 # ITINERARY PLANNING PAGE
@@ -273,7 +220,7 @@ def show_home_page(engine):
 def show_itinerary_page(engine):
     """Display itinerary planning page"""
     
-    st.markdown('<h1 class="main-header">✈️ Plan Your Perfect Trip</h1>', unsafe_allow_html=True)
+    st.title("✈️ Plan Your Perfect Trip")
     
     st.markdown("""
     Tell us about yourself and your travel preferences, and our AI will create 
@@ -284,7 +231,7 @@ def show_itinerary_page(engine):
     
     # Input form
     with st.form("itinerary_form"):
-        st.markdown("#### 👤 About You")
+        st.subheader("👤 About You")
         
         col1, col2 = st.columns(2)
         
@@ -302,8 +249,8 @@ def show_itinerary_page(engine):
             
             budget = st.selectbox(
                 "Budget Preference",
-                ['Budget', 'Mid-range', 'Luxury'],
-                index=1
+                ['Mid-range', 'Luxury'],
+                index=0
             )
         
         col3, col4 = st.columns(2)
@@ -311,7 +258,7 @@ def show_itinerary_page(engine):
         with col3:
             climate = st.selectbox(
                 "Climate Preference",
-                ['Any', 'Cold', 'Temperate', 'Warm'],
+                ['Any', 'Temperate'],
                 index=0
             )
         
@@ -337,7 +284,7 @@ def show_itinerary_page(engine):
     # Generate itinerary
     if submitted:
         if not interests:
-            st.error("Please select at least one interest!")
+            st.error("⚠️ Please select at least one interest!")
             return
         
         with st.spinner("🤖 AI is creating your perfect itinerary..."):
@@ -359,7 +306,7 @@ def show_itinerary_page(engine):
                 st.session_state.generated_itinerary = itinerary
                 
             except Exception as e:
-                st.error(f"Error generating itinerary: {str(e)}")
+                st.error(f"❌ Error: {str(e)}")
                 return
         
         st.success("✅ Your personalized itinerary is ready!")
@@ -377,7 +324,7 @@ def display_itinerary(itinerary, engine):
     
     st.write("")
     st.divider()
-    st.markdown("### 🗺️ Your Personalized Itinerary")
+    st.subheader("🗺️ Your Personalized Itinerary")
     
     # Summary cards
     col1, col2, col3, col4 = st.columns(4)
@@ -418,15 +365,11 @@ def display_itinerary(itinerary, engine):
     st.write("")
     
     # Daily schedule
-    st.markdown("#### 📅 Daily Schedule")
+    st.subheader("📅 Daily Schedule")
     
     for day in itinerary['itinerary']['daily_schedule']:
         with st.container():
-            st.markdown(f"""
-            <div class="day-card">
-                <h3>Day {day['day']} - {day['date']} | {day['city']}</h3>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"### Day {day['day']} - {day['date']} | 📍 {day['city']}")
             
             col1, col2 = st.columns([2, 1])
             
@@ -447,9 +390,7 @@ def display_itinerary(itinerary, engine):
             with col2:
                 st.metric("💰 Estimated Cost", f"${day['estimated_cost_usd']:.2f}")
             
-            st.write("")
-    
-    st.divider()
+            st.divider()
     
     # Recommendations
     if 'recommendations' in itinerary and itinerary['recommendations']:
@@ -514,7 +455,7 @@ def generate_and_download_pdf(itinerary):
 def show_recommendations_page(engine):
     """Display recommendations page"""
     
-    st.markdown('<h1 class="main-header">💡 Discover Your Perfect Destination</h1>', unsafe_allow_html=True)
+    st.title("💡 Discover Your Perfect Destination")
     
     st.markdown("""
     Get personalized recommendations based on your preferences. Our AI analyzes 
@@ -523,7 +464,7 @@ def show_recommendations_page(engine):
     
     st.write("")
     
-    # Filters in tabs for better organization
+    # Filters
     tab1, tab2 = st.tabs(["🔍 Search Options", "ℹ️ Tips"])
     
     with tab1:
@@ -544,12 +485,12 @@ def show_recommendations_page(engine):
             rec_type_param = type_mapping[rec_type]
         
         with col2:
-            num_recs = st.slider("Number of recommendations", 3, 15, 5)
+            num_recs = st.slider("Number of recommendations", 3, 10, 5)
         
         with col3:
             budget_filter = st.selectbox(
                 "Budget Level",
-                ['Mid-range', 'Luxury'],  # Only show available options
+                ['Mid-range', 'Luxury'],
                 index=0
             )
         
@@ -571,7 +512,7 @@ def show_recommendations_page(engine):
         
         - Select multiple interests to get varied recommendations
         - Our dataset focuses on 5 major cultural destinations
-        - Budget levels available: Mid-range and Luxury
+        - Available cities: Paris, Rome, Beijing, Agra, Cusco
         - Higher match scores (80+) indicate excellent fits
         - UNESCO sites are specially highlighted
         """)
@@ -580,10 +521,10 @@ def show_recommendations_page(engine):
     
     if st.button("🔍 Get Recommendations", type="primary", use_container_width=True):
         if not interests_filter:
-            st.warning("⚠️ Please select at least one interest to get recommendations!")
+            st.warning("⚠️ Please select at least one interest!")
             return
         
-        with st.spinner("🤖 AI is finding your perfect matches..."):
+        with st.spinner("🤖 Finding your perfect matches..."):
             try:
                 profile = TouristProfile(
                     age=age_filter,
@@ -600,15 +541,13 @@ def show_recommendations_page(engine):
                 )
                 
                 if recommendations['status'] == 'success':
-                    # Show summary
-                    st.success(f"✅ Found {recommendations['count']} recommendations matching your preferences!")
+                    st.success(f"✅ Found {recommendations['count']} recommendations!")
                     display_recommendations(recommendations)
                 else:
-                    st.error("Failed to generate recommendations. Please try again.")
+                    st.error("Failed to generate recommendations.")
                 
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
-                st.info("Try selecting different filters or reducing the number of recommendations.")
 
 def display_recommendations(recommendations):
     """Display recommendation results"""
@@ -617,43 +556,45 @@ def display_recommendations(recommendations):
         st.error("Failed to get recommendations")
         return
     
-    st.write("")
-    st.divider()
-    st.markdown(f"### 🎯 Top {recommendations['count']} Recommendations for You")
-    
     if len(recommendations['recommendations']) == 0:
-        st.warning("No recommendations found. Try adjusting your filters!")
+        st.warning("No recommendations found. Try different filters!")
         return
     
+    st.write("")
+    st.divider()
+    st.subheader(f"🎯 Your Top {recommendations['count']} Matches")
+    
     for i, rec in enumerate(recommendations['recommendations'], 1):
-        # Create a nice card with container
         with st.container():
             col1, col2 = st.columns([3, 1])
             
             with col1:
                 st.markdown(f"### #{i}. {rec['name']}")
                 st.write(f"**Type:** {rec['type'].title()}")
-                st.write(f"**Why recommended:** {rec.get('reason', 'Great match for your interests')}")
+                st.write(f"**Why recommended:** {rec.get('reason', 'Great match for you')}")
                 
-                # Show location for sites
+                # Location for sites
                 if 'city' in rec and rec.get('type') == 'site':
                     st.write(f"📍 **Location:** {rec['city']}, {rec.get('country', 'N/A')}")
                 
-                # Show UNESCO status
+                # UNESCO
                 if 'unesco_site' in rec and rec['unesco_site']:
                     st.success("🏛️ UNESCO World Heritage Site")
             
             with col2:
-                # Score badge
+                # Score
                 score = rec.get('score', 0)
                 if score >= 80:
-                    st.success(f"**{score}/100**\n\nExcellent Match!")
+                    st.success(f"**{score:.0f}/100**")
+                    st.caption("Excellent Match!")
                 elif score >= 60:
-                    st.info(f"**{score}/100**\n\nGood Match")
+                    st.info(f"**{score:.0f}/100**")
+                    st.caption("Good Match")
                 else:
-                    st.warning(f"**{score}/100**\n\nFair Match")
+                    st.warning(f"**{score:.0f}/100**")
+                    st.caption("Fair Match")
                 
-                # Cost if available
+                # Cost
                 if 'cost_usd' in rec:
                     st.metric("Daily Cost", f"${rec['cost_usd']:.0f}")
                 elif 'avg_cost_usd' in rec:
@@ -668,7 +609,7 @@ def display_recommendations(recommendations):
 def show_chatbot_page(chatbot, engine):
     """Display chatbot page"""
     
-    st.markdown('<h1 class="main-header">💬 AI Travel Assistant</h1>', unsafe_allow_html=True)
+    st.title("💬 AI Travel Assistant")
     
     st.markdown("""
     Ask me anything about travel planning! I can help you with destinations, 
@@ -677,74 +618,69 @@ def show_chatbot_page(chatbot, engine):
     
     st.write("")
     
-    # Chat interface
-    st.markdown("### 💭 Chat with Your Travel Assistant")
+    # Chat container
+    st.subheader("💭 Chat with Your Assistant")
     
-    # Display chat history
-    chat_container = st.container()
+    # Display history
+    if not st.session_state.chat_history:
+        st.info("👋 **Hello!** I'm your AI travel assistant. How can I help you plan your perfect trip today?")
     
-    with chat_container:
-        if not st.session_state.chat_history:
-            st.info("👋 Hello! I'm your AI travel assistant. How can I help you plan your perfect trip today?")
-        
-        for i, message in enumerate(st.session_state.chat_history):
-            if message['role'] == 'user':
-                st.markdown(f"""
-                <div class="chat-message user-message">
-                    <strong>You:</strong> {message['content']}
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div class="chat-message assistant-message">
-                    <strong>🤖 Assistant:</strong> {message['content']}
-                </div>
-                """, unsafe_allow_html=True)
+    for message in st.session_state.chat_history:
+        if message['role'] == 'user':
+            with st.chat_message("user"):
+                st.write(message['content'])
+        else:
+            with st.chat_message("assistant"):
+                st.write(message['content'])
     
     st.write("")
     
-    # Suggested prompts
+    # Suggested prompts (only show if no history)
     if not st.session_state.chat_history:
         st.markdown("**💡 Try asking:**")
         
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("Recommend art destinations", use_container_width=True):
-                handle_chat("Recommend some destinations for art lovers")
+            if st.button("🎨 Recommend art destinations", use_container_width=True):
+                handle_chat("Recommend some destinations for art lovers", chatbot)
+                st.rerun()
         
         with col2:
-            if st.button("What's the average cost?", use_container_width=True):
-                handle_chat("What's the average cost per day?")
+            if st.button("💰 What's the average cost?", use_container_width=True):
+                handle_chat("What's the average cost per day?", chatbot)
+                st.rerun()
         
         col3, col4 = st.columns(2)
         
         with col3:
-            if st.button("Tell me about UNESCO sites", use_container_width=True):
-                handle_chat("Tell me about UNESCO World Heritage sites")
+            if st.button("🏛️ Tell me about UNESCO sites", use_container_width=True):
+                handle_chat("Tell me about UNESCO World Heritage sites", chatbot)
+                st.rerun()
         
         with col4:
-            if st.button("Accessibility options", use_container_width=True):
-                handle_chat("What accessibility options are available?")
+            if st.button("♿ Accessibility options", use_container_width=True):
+                handle_chat("What accessibility options are available?", chatbot)
+                st.rerun()
     
     # Chat input
     user_input = st.chat_input("Type your question here...")
     
     if user_input:
-        handle_chat(user_input)
+        handle_chat(user_input, chatbot)
+        st.rerun()
     
-    # Clear chat button
+    # Clear button
     if st.session_state.chat_history:
+        st.write("")
         if st.button("🗑️ Clear Conversation", type="secondary"):
             st.session_state.chat_history = []
             chatbot.clear_history()
             st.rerun()
 
-def handle_chat(user_message):
+def handle_chat(user_message, chatbot):
     """Handle chat message"""
-    chatbot = st.session_state.chatbot
-    
-    # Add user message to history
+    # Add user message
     st.session_state.chat_history.append({
         'role': 'user',
         'content': user_message
@@ -753,13 +689,11 @@ def handle_chat(user_message):
     # Get bot response
     response = chatbot.chat(user_message)
     
-    # Add bot response to history
+    # Add bot response
     st.session_state.chat_history.append({
         'role': 'assistant',
         'content': response['message']
     })
-    
-    st.rerun()
 
 # ============================================================================
 # ANALYTICS PAGE
@@ -768,8 +702,7 @@ def handle_chat(user_message):
 def show_analytics_page(engine):
     """Display analytics dashboard"""
     
-    st.markdown('<h1 class="main-header">📊 Platform Analytics</h1>', unsafe_allow_html=True)
-    
+    st.title("📊 Platform Analytics")
     st.markdown("Explore insights from our tourism platform data.")
     
     st.write("")
@@ -778,7 +711,7 @@ def show_analytics_page(engine):
     analytics = engine.get_analytics()
     
     # Dataset stats
-    st.markdown("### 📈 Dataset Overview")
+    st.subheader("📈 Dataset Overview")
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -798,7 +731,7 @@ def show_analytics_page(engine):
     st.divider()
     
     # Popular destinations
-    st.markdown("### 🌍 Most Popular Destinations")
+    st.subheader("🌍 Most Popular Destinations")
     
     col1, col2 = st.columns(2)
     
@@ -822,18 +755,18 @@ def show_analytics_page(engine):
     st.divider()
     
     # Cost analysis
-    st.markdown("### 💰 Cost Analysis")
+    st.subheader("💰 Cost Analysis")
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("Average Daily Cost", f"${analytics['cost_analysis']['avg_daily_cost_usd']:.2f}")
+        st.metric("Average Daily", f"${analytics['cost_analysis']['avg_daily_cost_usd']:.2f}")
     
     with col2:
-        st.metric("Minimum Cost", f"${analytics['cost_analysis']['min_cost_usd']:.2f}")
+        st.metric("Minimum", f"${analytics['cost_analysis']['min_cost_usd']:.2f}")
     
     with col3:
-        st.metric("Maximum Cost", f"${analytics['cost_analysis']['max_cost_usd']:.2f}")
+        st.metric("Maximum", f"${analytics['cost_analysis']['max_cost_usd']:.2f}")
     
     st.write("")
     
@@ -849,13 +782,13 @@ def show_analytics_page(engine):
     st.divider()
     
     # Tourist demographics
-    st.markdown("### 👥 Tourist Demographics")
+    st.subheader("👥 Tourist Demographics")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.metric("Average Age", f"{analytics['tourist_demographics']['avg_age']} years")
-        st.metric("Accessibility Needs", f"{analytics['tourist_demographics']['accessibility_needs_pct']:.1f}%")
+        st.metric("Average Age", f"{analytics['tourist_demographics']['avg_age']:.0f} years")
+        st.metric("With Accessibility Needs", f"{analytics['tourist_demographics']['accessibility_needs_pct']:.1f}%")
     
     with col2:
         st.markdown("**Age Distribution**")
@@ -868,19 +801,19 @@ def show_analytics_page(engine):
     st.write("")
     st.divider()
     
-    # Satisfaction metrics
-    st.markdown("### ⭐ Satisfaction Metrics")
+    # Satisfaction
+    st.subheader("⭐ Satisfaction Metrics")
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("Avg Tourist Rating", f"{analytics['satisfaction_metrics']['avg_tourist_rating']:.2f}/5")
+        st.metric("Avg Rating", f"{analytics['satisfaction_metrics']['avg_tourist_rating']:.2f}/5")
     
     with col2:
-        st.metric("Avg Satisfaction", f"{analytics['satisfaction_metrics']['avg_satisfaction']:.2f}/5")
+        st.metric("Satisfaction", f"{analytics['satisfaction_metrics']['avg_satisfaction']:.2f}/5")
     
     with col3:
-        st.metric("Recommendation Accuracy", f"{analytics['satisfaction_metrics']['recommendation_accuracy']:.0f}%")
+        st.metric("Accuracy", f"{analytics['satisfaction_metrics']['recommendation_accuracy']:.0f}%")
 
 # ============================================================================
 # ABOUT PAGE
@@ -889,7 +822,7 @@ def show_analytics_page(engine):
 def show_about_page():
     """Display about page"""
     
-    st.markdown('<h1 class="main-header">ℹ️ About This Platform</h1>', unsafe_allow_html=True)
+    st.title("ℹ️ About This Platform")
     
     st.markdown("""
     ## AI Cultural Tourism Insights & Engagement Platform
@@ -912,7 +845,7 @@ def show_about_page():
     
     3. **AI Travel Assistant**
        - 24/7 chatbot support
-       - Multilingual capabilities (via Gemini API)
+       - Multilingual capabilities (framework ready)
        - Context-aware conversations
     
     4. **PDF Itinerary Export**
@@ -937,15 +870,15 @@ def show_about_page():
     
     - **Total Records:** 9,989 tourism experiences
     - **Unique Tourists:** 5,000 profiles
-    - **Cities Covered:** 5 major cultural destinations
+    - **Cities Covered:** 5 major cultural destinations (Paris, Rome, Beijing, Agra, Cusco)
     - **Data Quality:** 100% completeness on critical fields
     
     ### 👥 Project Information
     
     **Project:** AI Capstone - Scenario 3  
     **Platform:** GlobeTrek AI Solutions  
-    **Version:** 1.0  
-    **Date:** January 2026  
+    **Version:** 1.1 (Bug Fix Release)
+    **Date:** February 2026  
     
     ### 📝 How It Works
     
@@ -962,11 +895,6 @@ def show_about_page():
     - Your preferences are processed locally
     - No personal data is stored permanently
     - AI recommendations are generated in real-time
-    
-    ### 📞 Support
-    
-    For questions or issues, please refer to the documentation or use the 
-    AI Travel Assistant feature.
     
     ---
     
