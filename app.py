@@ -73,14 +73,14 @@ def main():
         if st.session_state.backend_engine is None:
             with st.spinner("Loading AI backend..."):
                 st.session_state.backend_engine = load_backend_engine(
-                    'master_tourism_dataset_v2_enhanced.csv'
+                    'cultural_tourism_master'
                 )
                 st.session_state.chatbot = load_chatbot(st.session_state.backend_engine)
             st.sidebar.success("✅ Backend loaded!")
     except Exception as e:
         st.sidebar.error(f"❌ Backend Error")
         st.error(f"**Error loading backend:** {str(e)}")
-        st.info("📁 **Make sure** `master_clean_tourism_dataset_v1.csv` is in the same folder as `app.py`")
+        st.info("📁 **Make sure** `cultural_tourism_master` is in the same folder as `app.py`")
         st.stop()
     
     engine = st.session_state.backend_engine
