@@ -4,10 +4,6 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 
-# =====================================================
-# DATA MODELS
-# =====================================================
-
 @dataclass
 class TouristProfile:
     age: int
@@ -18,20 +14,6 @@ class TouristProfile:
     climate_preference: Optional[str] = None
 
 
-@dataclass
-class ItineraryDay:
-    day_number: int
-    city: str
-    sites: List[str]
-    estimated_cost: float
-    activities: List[str]
-    notes: str
-
-
-# =====================================================
-# BACKEND ENGINE
-# =====================================================
-
 class TourismBackendEngine:
 
     def __init__(self, dataset_path):
@@ -40,7 +22,7 @@ class TourismBackendEngine:
 
         df = pd.read_csv(dataset_path)
 
-        # Normalize column names
+        # normalize column names
         df.columns = (
             df.columns
             .str.strip()
@@ -48,36 +30,26 @@ class TourismBackendEngine:
             .str.replace(" ", "_")
         )
 
-        # Create compatibility column
+        # create compatibility column
         if "site_name" in df.columns:
             df["current_site"] = df["site_name"]
 
         self.df = df
 
-        print("Dataset loaded successfully")
-        print("Total records:", len(self.df))
+        print("Dataset loaded:", len(self.df))
 
 
-    # =====================================================
+    # ============================================
     # ITINERARY GENERATION
-    # =====================================================
+    # ============================================
 
-    def generate_itinerary(
-        self,
-        tourist_profile: TouristProfile,
-        start_date: Optional[datetime] = None
-    ) -> Dict[str, Any]:
-
-        if start_date is None:
-            start_date = datetime.now()
+    def generate_itinerary(self, tourist_profile: TouristProfile):
 
         df = self.df.copy()
 
-        # Budget filter
         if "budget_level" in df.columns:
             df = df[df["budget_level"] == tourist_profile.budget_preference]
 
-        # Rating score
         if "tourist_rating" in df.columns:
             df["score"] = df["tourist_rating"].fillna(3)
         else:
@@ -87,56 +59,28 @@ class TourismBackendEngine:
 
         selected = df.head(tourist_profile.preferred_duration)
 
-        itinerary_days = []
+        days = []
 
         for i, (_, row) in enumerate(selected.iterrows(), start=1):
 
-            day = ItineraryDay(
-                day_number=i,
-                city=row["city"],
-                sites=[row["current_site"]],
-                estimated_cost=row.get("avg_cost_usd", 100),
-                activities=self._suggest_activities(
-                    tourist_profile.interests
-                ),
-                notes=f"Explore {row['city']}"
-            )
-
-            itinerary_days.append(day)
-
-        total_cost = sum(d.estimated_cost for d in itinerary_days)
+            days.append({
+                "day": i,
+                "city": row["city"],
+                "site": row["current_site"],
+                "cost": row.get("avg_cost_usd", 100)
+            })
 
         return {
             "status": "success",
-            "itinerary": {
-                "total_days": len(itinerary_days),
-                "total_cost_usd": round(total_cost, 2),
-                "avg_daily_cost_usd": round(total_cost / len(itinerary_days), 2),
-                "cities_visited": list({d.city for d in itinerary_days}),
-                "daily_schedule": [
-                    {
-                        "day": d.day_number,
-                        "city": d.city,
-                        "sites": d.sites,
-                        "activities": d.activities,
-                        "estimated_cost_usd": d.estimated_cost,
-                        "notes": d.notes
-                    }
-                    for d in itinerary_days
-                ]
-            }
+            "days": days
         }
 
 
-    # =====================================================
+    # ============================================
     # RECOMMENDATIONS
-    # =====================================================
+    # ============================================
 
-    def get_recommendations(
-        self,
-        tourist_profile: TouristProfile,
-        num_recommendations: int = 5
-    ) -> Dict[str, Any]:
+    def get_recommendations(self, tourist_profile: TouristProfile):
 
         df = self.df.copy()
 
@@ -152,78 +96,30 @@ class TourismBackendEngine:
 
         recs = []
 
-        for _, row in df.head(num_recommendations).iterrows():
+        for _, row in df.head(5).iterrows():
 
             recs.append({
-                "type": "site",
-                "name": row["current_site"],
+                "site": row["current_site"],
                 "city": row["city"],
                 "country": row["country"],
-                "score": float(row["score"]),
-                "cost_usd": float(row.get("avg_cost_usd", 0))
+                "rating": row.get("tourist_rating", 0)
             })
 
-        return {
-            "status": "success",
-            "count": len(recs),
-            "recommendations": recs
-        }
+        return recs
 
 
-    # =====================================================
+    # ============================================
     # ANALYTICS
-    # =====================================================
+    # ============================================
 
     def get_analytics(self):
 
         df = self.df
 
         return {
-
             "dataset_stats": {
                 "total_records": len(df),
-                "unique_tourists": df["tourist_id"].nunique()
-                if "tourist_id" in df.columns else 0,
-                "unique_cities": df["city"].nunique(),
-                "unique_countries": df["country"].nunique()
-            },
-
-            "popular_destinations": {
-                "top_cities": df["city"].value_counts().head(5).to_dict(),
-                "top_countries": df["country"].value_counts().head(5).to_dict()
-            },
-
-            "cost_analysis": {
-                "avg_daily_cost_usd": float(df["avg_cost_usd"].mean())
-                if "avg_cost_usd" in df.columns else 0,
-                "min_cost_usd": float(df["avg_cost_usd"].min())
-                if "avg_cost_usd" in df.columns else 0,
-                "max_cost_usd": float(df["avg_cost_usd"].max())
-                if "avg_cost_usd" in df.columns else 0
+                "cities": df["city"].nunique(),
+                "countries": df["country"].nunique()
             }
         }
-
-
-    # =====================================================
-    # ACTIVITIES
-    # =====================================================
-
-    def _suggest_activities(self, interests):
-
-        activities = {
-            "Art": ["Visit art galleries", "Museum tour"],
-            "History": ["Historical walking tour", "Ancient landmarks"],
-            "Nature": ["Nature walk", "Visit parks"],
-            "Cultural": ["Local food tasting", "Visit markets"]
-        }
-
-        suggestions = []
-
-        for interest in interests:
-            if interest in activities:
-                suggestions.extend(activities[interest])
-
-        if not suggestions:
-            suggestions = ["City exploration"]
-
-        return suggestions[:3]
