@@ -75,11 +75,9 @@ class ItineraryDay:
 # ============================================================================
 
 class TourismBackendEngine:
-    """
-    Main backend engine for AI Cultural Tourism Platform
-    """
-    
-    def __init__(self, dataset_path: str):
+
+    def __init__(self, dataset_path):
+        self.dataset = pd.read_csv(dataset_path)
         """
         Initialize backend engine with master dataset
         
