@@ -1,15 +1,16 @@
 import streamlit as st
+import pandas as pd
+
 from tourism_backend_engine import TourismBackendEngine, TouristProfile
 from pdf_generator import PDFItineraryGenerator
 from chatbot_integration import TravelChatbot
-import pandas as pd
 
 st.set_page_config(page_title="AI Cultural Tourism Platform", layout="wide")
 
 # Load backend
 @st.cache_resource
 def load_engine():
-    return TourismBackendEngine("data/master_tourism_dataset_v2_enhanced.csv")
+    return TourismBackendEngine("master_tourism_dataset_v2_enhanced.csv")
 
 engine = load_engine()
 chatbot = TravelChatbot(engine)
@@ -25,18 +26,17 @@ page = st.sidebar.radio(
 
 if page == "Home":
 
-    st.title("AI Cultural Tourism Insights Platform")
+    st.title("AI Cultural Tourism Platform")
 
-    st.write("""
-    This platform uses **AI-powered recommendation systems**
-    to create personalized travel experiences.
-    """)
+    st.write(
+        "AI powered platform for personalized cultural tourism planning."
+    )
 
     analytics = engine.get_analytics()
 
-    col1,col2,col3 = st.columns(3)
+    col1, col2, col3 = st.columns(3)
 
-    col1.metric("Total Experiences", analytics["dataset_stats"]["total_records"])
+    col1.metric("Experiences", analytics["dataset_stats"]["total_records"])
     col2.metric("Cities", analytics["dataset_stats"]["unique_cities"])
     col3.metric("Countries", analytics["dataset_stats"]["unique_countries"])
 
@@ -45,20 +45,20 @@ if page == "Home":
 
 elif page == "Plan Trip":
 
-    st.header("Personalized Itinerary Generator")
+    st.header("Personalized Travel Itinerary")
 
-    age = st.slider("Age",18,70,30)
+    age = st.slider("Age", 18, 70, 30)
 
     interests = st.multiselect(
         "Travel Interests",
-        ["Art","History","Nature","Culture","Architecture"]
+        ["Art", "History", "Nature", "Culture", "Architecture"]
     )
 
-    duration = st.slider("Trip Duration (days)",1,10,5)
+    duration = st.slider("Trip Duration", 1, 10, 5)
 
     budget = st.selectbox(
         "Budget Level",
-        ["Budget","Mid-range","Luxury"]
+        ["Budget", "Mid-range", "Luxury"]
     )
 
     if st.button("Generate Itinerary"):
@@ -78,24 +78,26 @@ elif page == "Plan Trip":
         if st.button("Download PDF"):
 
             pdf = PDFItineraryGenerator()
+
             pdf_path = pdf.generate_itinerary_pdf(itinerary)
 
-            with open(pdf_path,"rb") as f:
+            with open(pdf_path, "rb") as f:
+
                 st.download_button(
                     "Download Itinerary PDF",
                     f,
-                    "travel_plan.pdf"
+                    "itinerary.pdf"
                 )
 
 # ---------------- RECOMMENDATIONS ----------------
 
 elif page == "Recommendations":
 
-    st.header("Smart Destination Recommendations")
+    st.header("Destination Recommendations")
 
     interests = st.multiselect(
         "Interests",
-        ["Art","History","Nature","Culture","Architecture"]
+        ["Art", "History", "Nature", "Culture"]
     )
 
     profile = TouristProfile(
@@ -111,11 +113,12 @@ elif page == "Recommendations":
     for r in recs["recommendations"]:
         st.write(r)
 
+
 # ---------------- CHATBOT ----------------
 
 elif page == "AI Chatbot":
 
-    st.header("AI Travel Assistant")
+    st.header("Travel AI Assistant")
 
     question = st.text_input("Ask travel question")
 
@@ -125,11 +128,12 @@ elif page == "AI Chatbot":
 
         st.write(response)
 
+
 # ---------------- ANALYTICS ----------------
 
 elif page == "Analytics":
 
-    st.header("Tourism Data Analytics")
+    st.header("Tourism Analytics")
 
     analytics = engine.get_analytics()
 
