@@ -89,7 +89,16 @@ class TourismBackendEngine:
         print("🚀 Initializing Tourism Backend Engine...")
         
         # Load master dataset
-        self.df = pd.read_csv(dataset_path)
+        self.dataset = pd.read_csv(dataset_path)
+
+# Normalize column names
+self.dataset.columns = (
+    self.dataset.columns
+    .str.strip()
+    .str.lower()
+    .str.replace(" ", "_")
+)
+self.dataset["current_site"] = self.dataset["site_name"]
         
         # Parse list columns
         self._parse_list_columns()
