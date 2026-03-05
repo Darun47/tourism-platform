@@ -108,12 +108,13 @@ elif page == "Plan Trip":
 
             col1, col2 = st.columns(2)
 
-            col1.write("🏛 Site:", day["site"])
-            col2.write("💰 Estimated Cost:", f"${day['cost']}")
+            col1.write(f"🏛 Site: {day['site']}")
+            col2.write(f"💰 Estimated Cost: ${day['cost']}")
 
             st.divider()
 
         # PDF Export
+
         pdf = PDFItineraryGenerator()
         pdf_path = pdf.generate_itinerary_pdf(itinerary)
 
