@@ -1,125 +1,89 @@
 import pandas as pd
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
-from datetime import datetime
+from typing import List, Dict
 
 
 @dataclass
 class TouristProfile:
-    age: int
-    interests: List[str]
-    accessibility_needs: bool
-    preferred_duration: int
-    budget_preference: str
-    climate_preference: Optional[str] = None
+
+    age:int
+    interests:List[str]
+    accessibility_needs:bool
+    preferred_duration:int
+    budget_preference:str
+    climate_preference:str=None
 
 
 class TourismBackendEngine:
 
-    def __init__(self, dataset_path):
-
-        print("Loading dataset...")
+    def __init__(self,dataset_path):
 
         df = pd.read_csv(dataset_path)
 
-        # normalize column names
-        df.columns = (
-            df.columns
-            .str.strip()
-            .str.lower()
-            .str.replace(" ", "_")
-        )
+        df.columns = df.columns.str.lower().str.replace(" ","_")
 
-        # create compatibility column
         if "site_name" in df.columns:
             df["current_site"] = df["site_name"]
 
         self.df = df
 
-        print("Dataset loaded:", len(self.df))
 
-
-    # ============================================
-    # ITINERARY GENERATION
-    # ============================================
-
-    def generate_itinerary(self, tourist_profile: TouristProfile):
+    def generate_itinerary(self,profile:TouristProfile):
 
         df = self.df.copy()
 
         if "budget_level" in df.columns:
-            df = df[df["budget_level"] == tourist_profile.budget_preference]
+            df = df[df["budget_level"]==profile.budget_preference]
 
-        if "tourist_rating" in df.columns:
-            df["score"] = df["tourist_rating"].fillna(3)
-        else:
-            df["score"] = 3
+        df = df.sort_values("tourist_rating",ascending=False)
 
-        df = df.sort_values("score", ascending=False)
+        selected = df.head(profile.preferred_duration)
 
-        selected = df.head(tourist_profile.preferred_duration)
+        days=[]
 
-        days = []
-
-        for i, (_, row) in enumerate(selected.iterrows(), start=1):
+        for i,row in selected.iterrows():
 
             days.append({
-                "day": i,
-                "city": row["city"],
-                "site": row["current_site"],
-                "cost": row.get("avg_cost_usd", 100)
+                "city":row["city"],
+                "site":row["current_site"],
+                "cost":row["avg_cost_usd"]
             })
 
-        return {
-            "status": "success",
-            "days": days
-        }
+        return {"days":days}
 
 
-    # ============================================
-    # RECOMMENDATIONS
-    # ============================================
+    def get_recommendations(self,profile:TouristProfile):
 
-    def get_recommendations(self, tourist_profile: TouristProfile):
+        df=self.df.copy()
 
-        df = self.df.copy()
+        df=df.sort_values("tourist_rating",ascending=False)
 
-        if "budget_level" in df.columns:
-            df = df[df["budget_level"] == tourist_profile.budget_preference]
+        top=df.head(5)
 
-        if "tourist_rating" in df.columns:
-            df["score"] = df["tourist_rating"].fillna(3)
-        else:
-            df["score"] = 3
+        recs=[]
 
-        df = df.sort_values("score", ascending=False)
-
-        recs = []
-
-        for _, row in df.head(5).iterrows():
+        for i,row in top.iterrows():
 
             recs.append({
-                "site": row["current_site"],
-                "city": row["city"],
-                "country": row["country"],
-                "rating": row.get("tourist_rating", 0)
+                "name":row["current_site"],
+                "city":row["city"],
+                "country":row["country"],
+                "rating":row["tourist_rating"]
             })
 
-        return recs
+        return {"recommendations":recs}
 
-
-    # ============================================
-    # ANALYTICS
-    # ============================================
 
     def get_analytics(self):
 
-        df = self.df
+        df=self.df
 
         return {
-            "dataset_stats": {
-                "total_records": len(df),
-                "cities": df["city"].nunique(),
-                "countries": df["country"].nunique()
+
+            "dataset_stats":{
+                "total_records":len(df),
+                "unique_cities":df["city"].nunique(),
+                "unique_countries":df["country"].nunique()
             }
+
         }
