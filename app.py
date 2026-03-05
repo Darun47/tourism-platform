@@ -16,10 +16,6 @@ from datetime import datetime, timedelta
 import sys
 import os
 
-# Add backend modules to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Import backend modules
 from tourism_backend_engine import TourismBackendEngine, TouristProfile
 from pdf_generator import PDFItineraryGenerator
 from chatbot_integration import TravelChatbot
