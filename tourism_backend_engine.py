@@ -1,12 +1,12 @@
 import pandas as pd
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
-# =========================================================
+# =====================================================
 # DATA MODELS
-# =========================================================
+# =====================================================
 
 @dataclass
 class TouristProfile:
@@ -28,15 +28,15 @@ class ItineraryDay:
     notes: str
 
 
-# =========================================================
+# =====================================================
 # BACKEND ENGINE
-# =========================================================
+# =====================================================
 
 class TourismBackendEngine:
 
-    def __init__(self, dataset_path: str):
+    def __init__(self, dataset_path):
 
-        print("Loading tourism dataset...")
+        print("Loading dataset...")
 
         df = pd.read_csv(dataset_path)
 
@@ -48,23 +48,25 @@ class TourismBackendEngine:
             .str.replace(" ", "_")
         )
 
-        # Compatibility column
+        # Create compatibility column
         if "site_name" in df.columns:
             df["current_site"] = df["site_name"]
 
         self.df = df
 
-        print("Dataset loaded:", len(self.df), "rows")
+        print("Dataset loaded successfully")
+        print("Total records:", len(self.df))
 
 
-    # =========================================================
+    # =====================================================
     # ITINERARY GENERATION
-    # =========================================================
+    # =====================================================
 
-    def generate_itinerary(self,
-                           tourist_profile: TouristProfile,
-                           start_date: Optional[datetime] = None
-                           ) -> Dict[str, Any]:
+    def generate_itinerary(
+        self,
+        tourist_profile: TouristProfile,
+        start_date: Optional[datetime] = None
+    ) -> Dict[str, Any]:
 
         if start_date is None:
             start_date = datetime.now()
@@ -95,7 +97,6 @@ class TourismBackendEngine:
                 sites=[row["current_site"]],
                 estimated_cost=row.get("avg_cost_usd", 100),
                 activities=self._suggest_activities(
-                    row["city"],
                     tourist_profile.interests
                 ),
                 notes=f"Explore {row['city']}"
@@ -127,14 +128,15 @@ class TourismBackendEngine:
         }
 
 
-    # =========================================================
+    # =====================================================
     # RECOMMENDATIONS
-    # =========================================================
+    # =====================================================
 
-    def get_recommendations(self,
-                            tourist_profile: TouristProfile,
-                            num_recommendations: int = 5
-                            ) -> Dict[str, Any]:
+    def get_recommendations(
+        self,
+        tourist_profile: TouristProfile,
+        num_recommendations: int = 5
+    ) -> Dict[str, Any]:
 
         df = self.df.copy()
 
@@ -153,6 +155,7 @@ class TourismBackendEngine:
         for _, row in df.head(num_recommendations).iterrows():
 
             recs.append({
+                "type": "site",
                 "name": row["current_site"],
                 "city": row["city"],
                 "country": row["country"],
@@ -167,9 +170,9 @@ class TourismBackendEngine:
         }
 
 
-    # =========================================================
+    # =====================================================
     # ANALYTICS
-    # =========================================================
+    # =====================================================
 
     def get_analytics(self):
 
@@ -201,16 +204,16 @@ class TourismBackendEngine:
         }
 
 
-    # =========================================================
+    # =====================================================
     # ACTIVITIES
-    # =========================================================
+    # =====================================================
 
-    def _suggest_activities(self, city, interests):
+    def _suggest_activities(self, interests):
 
         activities = {
             "Art": ["Visit art galleries", "Museum tour"],
             "History": ["Historical walking tour", "Ancient landmarks"],
-            "Nature": ["Parks and gardens", "Nature walk"],
+            "Nature": ["Nature walk", "Visit parks"],
             "Cultural": ["Local food tasting", "Visit markets"]
         }
 
