@@ -1,60 +1,64 @@
 import streamlit as st
 from tourism_backend_engine import TourismBackendEngine, TouristProfile
+from pdf_generator import PDFItineraryGenerator
+from chatbot_integration import TravelChatbot
+import pandas as pd
 
+st.set_page_config(page_title="AI Cultural Tourism Platform", layout="wide")
 
-st.set_page_config(page_title="AI Travel Planner")
-
-st.title("🌍 AI Cultural Tourism Platform")
-
-# load backend
+# Load backend
 @st.cache_resource
 def load_engine():
-    return TourismBackendEngine("master_tourism_dataset_v2_enhanced.csv")
+    return TourismBackendEngine("data/master_tourism_dataset_v2_enhanced.csv")
 
 engine = load_engine()
+chatbot = TravelChatbot(engine)
 
-
-st.sidebar.title("Navigation")
+st.sidebar.title("🌍 AI Travel Planner")
 
 page = st.sidebar.radio(
-    "Go to",
-    ["Home", "Plan Trip", "Recommendations", "Analytics"]
+    "Navigation",
+    ["Home", "Plan Trip", "Recommendations", "AI Chatbot", "Analytics"]
 )
 
-
-# ===================================
-# HOME
-# ===================================
+# ---------------- HOME ----------------
 
 if page == "Home":
 
-    st.header("Welcome to the AI Travel Planner")
+    st.title("AI Cultural Tourism Insights Platform")
 
-    st.write(
-        "This platform generates personalized cultural tourism recommendations."
-    )
+    st.write("""
+    This platform uses **AI-powered recommendation systems**
+    to create personalized travel experiences.
+    """)
+
+    analytics = engine.get_analytics()
+
+    col1,col2,col3 = st.columns(3)
+
+    col1.metric("Total Experiences", analytics["dataset_stats"]["total_records"])
+    col2.metric("Cities", analytics["dataset_stats"]["unique_cities"])
+    col3.metric("Countries", analytics["dataset_stats"]["unique_countries"])
 
 
-# ===================================
-# PLAN TRIP
-# ===================================
+# ---------------- PLAN TRIP ----------------
 
 elif page == "Plan Trip":
 
-    st.header("Generate Itinerary")
+    st.header("Personalized Itinerary Generator")
 
-    age = st.slider("Age", 18, 70, 30)
+    age = st.slider("Age",18,70,30)
 
     interests = st.multiselect(
-        "Interests",
-        ["Art", "History", "Nature", "Culture"]
+        "Travel Interests",
+        ["Art","History","Nature","Culture","Architecture"]
     )
 
-    duration = st.slider("Trip Duration", 1, 10, 5)
+    duration = st.slider("Trip Duration (days)",1,10,5)
 
     budget = st.selectbox(
-        "Budget",
-        ["Budget", "Mid-range", "Luxury"]
+        "Budget Level",
+        ["Budget","Mid-range","Luxury"]
     )
 
     if st.button("Generate Itinerary"):
@@ -67,22 +71,31 @@ elif page == "Plan Trip":
             budget_preference=budget
         )
 
-        result = engine.generate_itinerary(profile)
+        itinerary = engine.generate_itinerary(profile)
 
-        st.write(result)
+        st.write(itinerary)
 
+        if st.button("Download PDF"):
 
-# ===================================
-# RECOMMENDATIONS
-# ===================================
+            pdf = PDFItineraryGenerator()
+            pdf_path = pdf.generate_itinerary_pdf(itinerary)
+
+            with open(pdf_path,"rb") as f:
+                st.download_button(
+                    "Download Itinerary PDF",
+                    f,
+                    "travel_plan.pdf"
+                )
+
+# ---------------- RECOMMENDATIONS ----------------
 
 elif page == "Recommendations":
 
-    st.header("Destination Recommendations")
+    st.header("Smart Destination Recommendations")
 
     interests = st.multiselect(
         "Interests",
-        ["Art", "History", "Nature", "Culture"]
+        ["Art","History","Nature","Culture","Architecture"]
     )
 
     profile = TouristProfile(
@@ -95,17 +108,29 @@ elif page == "Recommendations":
 
     recs = engine.get_recommendations(profile)
 
-    st.write(recs)
+    for r in recs["recommendations"]:
+        st.write(r)
 
+# ---------------- CHATBOT ----------------
 
-# ===================================
-# ANALYTICS
-# ===================================
+elif page == "AI Chatbot":
+
+    st.header("AI Travel Assistant")
+
+    question = st.text_input("Ask travel question")
+
+    if question:
+
+        response = chatbot.chat(question)
+
+        st.write(response)
+
+# ---------------- ANALYTICS ----------------
 
 elif page == "Analytics":
 
-    st.header("Dataset Analytics")
+    st.header("Tourism Data Analytics")
 
-    data = engine.get_analytics()
+    analytics = engine.get_analytics()
 
-    st.write(data)
+    st.write(analytics)
