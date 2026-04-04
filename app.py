@@ -2,8 +2,14 @@ import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-import google.generativeai as genai
 import streamlit as st
+
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ModuleNotFoundError:
+    genai = None
+    GENAI_AVAILABLE = False
 import pandas as pd
 from src.data_processing import load_dataset, preprocess_dataset
 from src.recommender_engine import AIDestinationRecommender
@@ -45,7 +51,7 @@ df = preprocess_dataset(df)
 if "gemini_messages" not in st.session_state:
     st.session_state.gemini_messages = []
 if "gemini_api_valid" not in st.session_state:
-    st.session_state.gemini_api_valid = False
+   st.session_state.gemini_api_valid = GENAI_AVAILABLE and False
 if "gemini_key" not in st.session_state:
     st.session_state.gemini_key = ""
 if "gemini_model" not in st.session_state:
@@ -289,6 +295,9 @@ with tab3:
 
     st.header("💬 AI Travel Assistant")
 
+    if not GENAI_AVAILABLE:
+        st.warning("`google-generativeai` is not installed. Add it to requirements and redeploy to enable the AI assistant.")
+            
     # ── API Key Section ──────────────────────────────
     with st.expander(
         "🔑 Gemini API Key" + (" ✅ Connected" if st.session_state.gemini_api_valid else " ⚠️ Not connected"),
@@ -310,7 +319,9 @@ with tab3:
 
         with col_a:
             if st.button("✔ Validate Key", type="primary"):
-                if key_input:
+            if not GENAI_AVAILABLE:
+                    st.error("Gemini SDK is unavailable in this environment.")
+            elif key_input:
                     try:
                         genai.configure(api_key=key_input)
                         test = genai.GenerativeModel("gemini-2.5-flash")
