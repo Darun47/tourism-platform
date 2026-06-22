@@ -309,7 +309,7 @@ with tab3:
         )
 
         key_input = st.text_input(
-            "Paste your Gemini API key",
+            "AQ.Ab8RN6IcWFAFadcBEGKCForwHjZIAQO4l3QJJ1sj6w2sa0YoQQ",
             type="password",
             placeholder="AIza...",
             key="gemini_key_input"
